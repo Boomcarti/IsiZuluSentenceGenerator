@@ -1,0 +1,47 @@
+@base <http://people.cs.uct.ac.za/~zmahlaza/templates/test/> .
+@prefix  toct: <https://people.cs.uct.ac.za/~zmahlaza/ontologies/ToCT#> .
+@prefix  mola: <https://ontology.londisizwe.org/mola#> .
+@prefix  owl: <http://www.w3.org/2002/07/owl#> .
+@prefix  rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix  xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix  xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix  rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix co: <http://purl.org/co/> .
+@prefix cao: <http://people.cs.uct.ac.za/~zmahlaza/ontologies/ConcordAnnotationOntology#> .
+
+<possessiveNounTemp> a toct:Template
+	; toct:supportsLanguage <cpt_zulu>
+	; toct:hasFirstPart <noun1Slot>
+	; toct:hasLastPart <ofmen>
+	; toct:hasPart  <noun1Slot>, <ofmen> .
+
+<cpt_zulu> a mola:Dialect
+	; mola:isFamily <isiZulu> .
+
+<nounLabel> a zutemp:Noun
+	; toct:hasLabel "noun1Slot"^^xsd:string .
+
+<noun1Slot> a toct:Slot
+	; co:index "1"^^xsd:positiveInteger
+	; toct:labelledWith <nounLabel>
+	; toct:hasLabel "noun1"^^xsd:string
+	; toct:hasNextPart <ofmen> .
+
+<ofmen> a toct:PolymorphicWord
+	; co:index "2"^^xsd:positiveInteger
+	; toct:reliesOn <noun1Slot>
+	; toct:hasFirstPart <of>
+	; toct:hasLastPart <men> .
+
+<of> a toct:Concord
+	; co:index "1"^^xsd:positiveInteger
+	; cao:hasConcordType <possConType>
+	; toct:hasLabel "POSSE"^^xsd:string
+	; toct:dependsOn <noun1Slot>
+	; toct:hasNextPart <men> .
+
+<men> a toct:Root
+	; co:index "2"^^xsd:positiveInteger
+	; toct:hasValue "madoda"^^xsd:string .
+
+<possConType> a cao:PossessiveConcord .

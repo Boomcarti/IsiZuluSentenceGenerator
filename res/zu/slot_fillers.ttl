@@ -1,0 +1,39 @@
+@base <http://people.cs.uct.ac.za/~zmahlaza/templates/test/> .
+@prefix  toct: <https://people.cs.uct.ac.za/~zmahlaza/ontologies/ToCT#> .
+@prefix  mola: <https://ontology.londisizwe.org/mola#> .
+@prefix  owl: <http://www.w3.org/2002/07/owl#> .
+@prefix  rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix  xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix  xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix  rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix  co: <https://people.cs.uct.ac.za/~zmahlaza/ontologies/CO#> .
+@prefix zutemp: <https://people.cs.uct.ac.za/~zmahlaza/ontologies/templates/ZuTemplateAnnotationOntology#> .
+
+<noun1> a toct:UnimorphicWord
+    ; toct:hasValue "izinja"^^xsd:string
+    ; zutemp:hasPOS <posNounType>
+    ; zutemp:hasNounClass <nounClass10Type>
+    ; toct:fillsIn <noun1Slot>
+    ; toct:controls <LAdjC>
+    ; toct:controls <subj>
+    ; toct:controls <of>
+    ; toct:controls <quantConcord>
+    ; toct:controls <RelC> .
+
+
+<noun2> a toct:UnimorphicWord
+    ; toct:hasValue "abantu"^^xsd:string
+    ; zutemp:hasPOS <posNounType>
+    ; zutemp:hasNounClass <nounClass2Type>
+    ; toct:fillsIn <noun2Slot>
+    ; toct:fillsIn <noun3Slot>
+    ; toct:controls <enumConc>
+    ; toct:controls <obj>
+    ; toct:controls <SAdjC>
+    ; toct:controls <phiconc> .
+
+<nounClass2Type> a zutemp:NounClass2 .
+
+<nounClass10Type> a zutemp:NounClass10 .
+
+<posNounType> a zutemp:Noun .

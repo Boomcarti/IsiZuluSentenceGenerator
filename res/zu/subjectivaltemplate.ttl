@@ -1,0 +1,46 @@
+@base <http://people.cs.uct.ac.za/~zmahlaza/templates/test/> .
+@prefix  toct: <https://people.cs.uct.ac.za/~zmahlaza/ontologies/ToCT#> .
+@prefix  mola: <https://ontology.londisizwe.org/mola#> .
+@prefix  owl: <http://www.w3.org/2002/07/owl#> .
+@prefix  rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix  xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix  xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix  rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix co: <http://purl.org/co/> .
+@prefix cao: <http://people.cs.uct.ac.za/~zmahlaza/ontologies/ConcordAnnotationOntology#> .
+
+<plainOPPresentTense> a toct:Template
+	; toct:supportsLanguage <cpt_zulu>
+	; toct:hasFirstPart <all>
+	; toct:hasLastPart <noun1Slot>
+	; toct:hasPart <all>, <noun1Slot>, <only> .
+
+<cpt_zulu> a mola:Dialect
+	; mola:isFamily <isiZulu> .
+
+<all> a toct:PolymorphicWord
+	; co:index "1"^^xsd:positiveInteger
+	; toct:reliesOn <noun1Slot>
+	; toct:hasNextPart <noun1Slot>
+	; toct:hasFirstPart <quantConcord>
+	; toct:hasLastPart <onke> .
+
+<noun1Slot> a toct:Slot
+	; co:index "2"^^xsd:positiveInteger
+	; toct:hasLabel "noun1"^^xsd:string
+	; toct:labeledWith <posNounType> .
+
+<quantConcord> a toct:Concord
+	; co:index "1"^^xsd:positiveInteger
+	; zutemp:hasConcordType <subjConType>
+	; toct:hasLabel "QC"^^xsd:string
+	; toct:dependsOn <noun1Slot>
+	; toct:hasNextPart <onke> .
+
+<onke> a toct:Root
+	; co:index "2"^^xsd:positiveInteger
+	; toct:hasValue "onke"^^xsd:string .
+
+<subjConType> a cao:SubjectivalConcord .
+
+<posNounType> a zutemp:Noun .

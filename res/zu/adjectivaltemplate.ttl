@@ -1,0 +1,45 @@
+@base <http://people.cs.uct.ac.za/~zmahlaza/templates/test/> .
+@prefix  toct: <https://people.cs.uct.ac.za/~zmahlaza/ontologies/ToCT#> .
+@prefix  mola: <https://ontology.londisizwe.org/mola#> .
+@prefix  owl: <http://www.w3.org/2002/07/owl#> .
+@prefix  rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix  xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix  xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix  rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix co: <http://purl.org/co/> .
+@prefix cao: <http://people.cs.uct.ac.za/~zmahlaza/ontologies/ConcordAnnotationOntology#> .
+
+<adjectTemplate> a toct:Template
+    ; toct:hasFirstPart <noun1Slot>
+    ; toct:hasLastPart <old>
+    ; toct:supportsLanguage <cpt_zulu>
+    ; toct:hasPart <noun1Slot>, <old> .
+
+<cpt_zulu> a mola:Dialect
+	; mola:isFamily <isiZulu> .
+
+<noun1Slot> a toct:Slot
+	; co:index "1"^^xsd:positiveInteger
+	; toct:labeledWith <posNounType>
+	; toct:hasLabel "noun1"^^xsd:string
+	; toct:hasNextPart <old> .
+
+<old> a toct:PolymorphicWord
+	; co:index "2"^^xsd:positiveInteger
+	; toct:reliesOn <noun1Slot>
+	; toct:hasFirstPart <LAdjC>
+	; toct:hasLastPart <oldRoot> .
+
+<LAdjC> a toct:Concord
+	; co:index "1"^^xsd:positiveInteger
+	; zutemp:hasConcordType <adjConType>
+	; toct:hasLabel "LAdj"^^xsd:string
+	; toct:hasNextPart <oldRoot> .
+
+<oldRoot> a toct:Root
+	; co:index "2"^^xsd:positiveInteger
+	; toct:hasValue "dala"^^xsd:string .
+
+<adjConType> a cao:AdjectivalConcord .
+
+<posNounType> a zutemp:Noun .
