@@ -301,7 +301,7 @@ void CardinalSingular2Singular() throws IOException {
     ArrayList<String> SOIStrings() throws IOException, InterruptedException{
         ArrayList<String> sentences = new ArrayList<>();
 
-        int plurallimit =9999;
+        int plurallimit =20;
         for(int number =2; number< plurallimit; number++){
 
             for (Map.Entry<String,String> noun : this.pluralToNC.entrySet()){
@@ -407,6 +407,7 @@ return sentences;
     
 
     void SOISentence() throws IOException, InterruptedException {
+        System.out.println("SOI Sentence");
         List<String> SOIsentences = this.SOIStrings(); // Ensure SOIStrings() returns List<String>
         FileWriter csvWriter = new FileWriter("SOISentence.csv");
         csvWriter.append("sentence,verb\n");
@@ -428,12 +429,36 @@ return sentences;
         csvWriter.flush();
         csvWriter.close();
     }
+
+    void SingularSOISentence() throws IOException, InterruptedException {
+        System.out.println("SOI Sentence");
+        List<String> SOIsentences = this.SOIStrings(); // Ensure SOIStrings() returns List<String>
+        FileWriter csvWriter = new FileWriter("SingularSOISentence.csv");
+        csvWriter.append("sentence,verb\n");
+    
+        for (String verb : this.verbRoots) {
+            for (Map.Entry<String, String> firstNoun : this.singularToSNC.entrySet()) {
+                String verbConcord = this.concords.get(firstNoun.getValue());
+                String completedVerb = verbConcord + verb;
+                String sentence = firstNoun.getKey() + " " + completedVerb;
+    
+                for (String sentenceEnd : SOIsentences) {
+                    String fsentence = sentence + " " + sentenceEnd;
+                    csvWriter.append(String.join(",", fsentence, completedVerb));
+                    csvWriter.append("\n");
+                }
+            }
+        }
+    
+        csvWriter.flush();
+        csvWriter.close();
+    }
     
 
     void AdverbsSingularToSingular() throws IOException, InterruptedException {
         FileWriter csvWriter = new FileWriter("AdverbsSingularToSingular.csv");
         csvWriter.append("sentence,number,verbalised_number,verb\n");
-        int plurallimit = 9999;
+        int plurallimit = 30;
     
         for (int number = 1; number < plurallimit; number++) {
             for (String verb : this.verbRoots) {
@@ -487,7 +512,7 @@ return sentences;
     void AdverbsSingularToPlural() throws IOException, InterruptedException {
         FileWriter csvWriter = new FileWriter("AdverbsSingularToPlural.csv");
         csvWriter.append("sentence,number,verbalised_number,verb\n");
-        int plurallimit = 9999;
+        int plurallimit = 30;
     
         for (int number = 1; number < plurallimit; number++) {
             for (String verb : this.verbRoots) {
@@ -540,7 +565,7 @@ return sentences;
     void AdverbsPluralToSingular() throws IOException, InterruptedException {
         FileWriter csvWriter = new FileWriter("AdverbsPluralToSingular.csv");
         csvWriter.append("sentence,number,verbalised_number,verb\n");
-        int plurallimit = 9999;
+        int plurallimit = 30;
     
         for (int number = 1; number < plurallimit; number++) {
             for (String verb : this.verbRoots) {
@@ -591,7 +616,7 @@ return sentences;
     void AdverbsPluralToPlural() throws IOException, InterruptedException {
         FileWriter csvWriter = new FileWriter("AdverbsPluralToPlural.csv");
         csvWriter.append("sentence,number,verbalised_number,verb\n");
-        int plurallimit = 9999;
+        int plurallimit = 30;
     
         for (int number = 1; number < plurallimit; number++) {
             for (String verb : this.verbRoots) {
@@ -650,18 +675,24 @@ return sentences;
   public static void main(String[] args) throws IOException, InterruptedException {
     IsiZuluSentenceGenerator sentenceGenerator =  new IsiZuluSentenceGenerator();
     sentenceGenerator.readCSV("src/VerbsCSV.csv");
- sentenceGenerator.CardinalSingular2Singular();
-sentenceGenerator.CardinalPlural2Singular();
- sentenceGenerator.CardinalSingular2Plural();
+//sentenceGenerator.CardinalSingular2Singular();
+//sentenceGenerator.CardinalPlural2Singular();
+// sentenceGenerator.CardinalSingular2Plural();
 
-sentenceGenerator.CardinalPlural2Plural();
+//sentenceGenerator.CardinalPlural2Plural();
 
-sentenceGenerator.SOI(); 
-sentenceGenerator.SOISentence();
-sentenceGenerator.AdverbsSingularToSingular();
+//sentenceGenerator.SOI(); 
+//sentenceGenerator.SOISentence();
+//sentenceGenerator.AdverbsSingularToSingular();
+
+
+sentenceGenerator.SingularSOISentence();
 
 
  sentenceGenerator.AdverbsSingularToPlural();
+
+
+
 sentenceGenerator.AdverbsPluralToSingular();
 sentenceGenerator.AdverbsPluralToPlural();
 

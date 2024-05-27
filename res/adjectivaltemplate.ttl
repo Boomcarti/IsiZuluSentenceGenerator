@@ -22,7 +22,7 @@
 <noun1Slot> a toct:Slot
 	; co:index "1"^^xsd:positiveInteger
 	; toct:labeledWith <posNounType>
-	; toct:hasLabel "noun1"^^xsd:string
+	; toct:hasLabel "izincwadi"^^xsd:string
 	; toct:hasNextPart <old> .
 
 <old> a toct:PolymorphicWord
