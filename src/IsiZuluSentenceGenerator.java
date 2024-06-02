@@ -6,7 +6,9 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -16,8 +18,14 @@ public class IsiZuluSentenceGenerator {
     HashMap<String, String> concords;
     Map<String, String> singularToSNC;
     Map<String, String> pluralToNC;
+    Map<String, String> singular2plural;
+    Map<String, String> plural2singular;
     Map<String, List<String>> singularVerbList;
     Map<String, List<String>> pluralVerbList;
+    Map<String, List<String>> possibleSingularNouns;
+    Map<String, List<String>> possiblePluralNouns;
+
+
 
 
     String csvFilePath="";
@@ -27,6 +35,12 @@ public class IsiZuluSentenceGenerator {
         pluralToNC = new HashMap<>();
         singularVerbList = new HashMap<>();
         pluralVerbList = new HashMap<>();
+        possibleSingularNouns = new HashMap<>();
+        possiblePluralNouns = new HashMap<>();
+        singular2plural = new HashMap<>();
+        plural2singular = new HashMap<>();
+        
+
 
         concords =new HashMap<>();
         concords.put("1", "u");
@@ -71,6 +85,20 @@ public class IsiZuluSentenceGenerator {
                     verbList = new ArrayList<String>();
                     verbList.add(columns[8]);
                 }
+                String[] possibleNouns =  columns[9].contains(("-")) ? columns[9].split("-") : new String [] {columns[9]};
+                ArrayList<String> possibleSingularNounsList = new ArrayList<>();
+                ArrayList<String> possiblePluralNounsList = new ArrayList<>();
+
+                for(String possibleNounSandP : possibleNouns){
+                    String singularPossibleNoun =  possibleNounSandP.replaceAll(",","").trim().split("[0-9]")[0];
+                    String pluralPossibleNoun =  possibleNounSandP.replaceAll(",","").trim().split("[0-9]")[1];
+                    possibleSingularNounsList.add(singularPossibleNoun);
+                    possiblePluralNounsList.add(pluralPossibleNoun);
+                }
+                this.singular2plural.put(singular,plural);
+                this.plural2singular.put(plural,singular);
+                this.possibleSingularNouns.put(singular,possibleSingularNounsList);
+                this.possiblePluralNouns.put(plural,possiblePluralNounsList);
                 this.singularVerbList.put(singular,verbList);
                 this.pluralVerbList.put(plural,verbList);
                 this.singularToSNC.put(singular, snc);
@@ -86,12 +114,14 @@ public class IsiZuluSentenceGenerator {
     }
 
 void CardinalSingular2Singular() throws IOException {
+    System.out.println("Started: CardinalSingular2Singular");
         FileWriter csvWriter = new FileWriter("CardinalSingular2Singular.csv");
         csvWriter.append("sentence,first_noun,verb,second_noun,number\n");
-        
-
             for (Map.Entry<String,String> firstNoun : this.singularToSNC.entrySet()){
-                for (Map.Entry<String,String> secondNoun : this.singularToSNC.entrySet()){
+                List<String> secondNounList = this.possibleSingularNouns.get(firstNoun.getKey());
+                for (String secondNoun : secondNounList){
+                    String secNounClass = this.singularToSNC.get(secondNoun);
+                    if(secNounClass == null)continue;
                     List<String> verblist =  this.singularVerbList.get(firstNoun.getKey());
                     for(String verb : verblist ){
                         String verbConcord = concords.get(firstNoun.getValue());
@@ -106,7 +136,7 @@ void CardinalSingular2Singular() throws IOException {
                         command.add("-c");
                         command.add("Ca");
                         command.add("-nc");
-                        command.add(secondNoun.getValue());
+                        command.add(secNounClass);
                         command.add("-d");
                         
                         // ProcessBuilder setup
@@ -126,24 +156,33 @@ void CardinalSingular2Singular() throws IOException {
                         String verbalisedNumber = outputLines.get(1).split(" = ")[1];
                         if(verbalisedNumber.equals("onye")) continue;
 
-                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun.getKey() + " " + verbalisedNumber;     
-                        csvWriter.append(String.join(",", sentence, firstNoun.getKey(), completedVerb, secondNoun.getKey(), "1"));
+                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;     
+                        csvWriter.append(String.join(",", sentence, firstNoun.getKey(), completedVerb, secondNoun, "1"));
                         csvWriter.append("\n");
+                        csvWriter.flush();
                   //  System.out.println(sentence);
                 }
             }
         }
-        csvWriter.flush();
+        
+        
         csvWriter.close();
+        System.out.println("DONE- CardinalSingular2Singular");
     }
 
     void CardinalPlural2Singular() throws IOException {
+        System.out.println("Started: CardinalPlural2Singular");
         FileWriter csvWriter = new FileWriter("CardinalPlural2Singular.csv");
         csvWriter.append("sentence,first_noun,verb,second_noun,number\n");
-    
-   
+
             for (Map.Entry<String, String> firstNoun : this.pluralToNC.entrySet()) {
-                for (Map.Entry<String, String> secondNoun : this.singularToSNC.entrySet()) {
+                String singular = this.plural2singular.get(firstNoun.getKey());
+                List<String> secondNounList = this.possibleSingularNouns.get(singular);
+                for (String secondNoun : secondNounList){
+                    String secNounClass = this.singularToSNC.get(secondNoun);
+                    if(secNounClass == null){
+                     
+                        continue;}
                     List<String> verblist =  this.pluralVerbList.get(firstNoun.getKey());
 
                     for(String verb : verblist ){
@@ -160,7 +199,7 @@ void CardinalSingular2Singular() throws IOException {
                     command.add("-c");
                     command.add("Ca");
                     command.add("-nc");
-                    command.add(secondNoun.getValue());
+                    command.add(secNounClass);
                     command.add("-d");
     
                     // ProcessBuilder setup
@@ -180,17 +219,19 @@ void CardinalSingular2Singular() throws IOException {
     
                     String verbalisedNumber = outputLines.get(1).split(" = ")[1];
                     if(verbalisedNumber.equals("onye")) continue;
-                    String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun.getKey() + " " + verbalisedNumber;
+                    String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;
     
-                    csvWriter.append(String.join(",", sentence, firstNoun.getKey(), completedVerb, secondNoun.getKey(), "1"));
+                    csvWriter.append(String.join(",", sentence, firstNoun.getKey(), completedVerb, secondNoun, "1"));
                     csvWriter.append("\n");
+                    csvWriter.flush();
                //     System.out.println(sentence);
                 }
             }
         }
     
-        csvWriter.flush();
+       
         csvWriter.close();
+        System.out.println("DONE- CardinalPlural2Singular");
     }
     
 
@@ -199,13 +240,21 @@ void CardinalSingular2Singular() throws IOException {
 
 
     void CardinalSingular2Plural() throws IOException, InterruptedException {
+        System.out.println("Started: CardinalSingular2Plural");
         FileWriter csvWriter = new FileWriter("CardinalSingular2Plural.csv");
         csvWriter.append("sentence,first_noun,verb,second_noun,number\n");
     
-
-
                 for (Map.Entry<String, String> firstNoun : this.singularToSNC.entrySet()) {
-                    for (Map.Entry<String, String> secondNoun : this.pluralToNC.entrySet()) {
+
+
+                    String plural = this.singular2plural.get(firstNoun.getKey());
+                List<String> secondNounList = this.possiblePluralNouns.get(plural);
+                for (String secondNoun : secondNounList){
+
+            String secNounClass = this.pluralToNC.get(secondNoun);
+                    if(secNounClass == null){
+                     
+                        continue;}
                         int plurallimit = 9999;
                         for (int number = 2; number < plurallimit; number++) {
                         String verbConcord = concords.get(firstNoun.getValue());
@@ -223,7 +272,7 @@ void CardinalSingular2Singular() throws IOException {
                         command.add("-c");
                         command.add("Ca");
                         command.add("-nc");
-                        command.add(secondNoun.getValue());
+                        command.add(secNounClass);
                         command.add("-d");
     
                         // ProcessBuilder setup
@@ -243,30 +292,45 @@ void CardinalSingular2Singular() throws IOException {
     
                         String verbalisedNumber = outputLines.get(1).split(" = ")[1];
                         if(verbalisedNumber.equals("onye")) continue;
-                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun.getKey() + " " + verbalisedNumber;
+                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;
     
-                        csvWriter.append(String.join(",", sentence, firstNoun.getKey(), completedVerb, secondNoun.getKey(), String.valueOf(number)));
+                        csvWriter.append(String.join(",", sentence, firstNoun.getKey(), completedVerb, secondNoun, String.valueOf(number)));
                         csvWriter.append("\n");
+                        csvWriter.flush();
                     }
                 }
             }
         }
     
-        csvWriter.flush();
+        
         csvWriter.close();
+        System.out.println("DONE- CardinalSingular2Plural");
     }
 
     void CardinalPlural2Plural() throws IOException, InterruptedException {
+        System.out.println("Started: CardinalPlural2Plural");
         FileWriter csvWriter = new FileWriter("CardinalPlural2Plural.csv");
         csvWriter.append("sentence,first_noun,verb,second_noun,number\n");
     
 
                 for (Map.Entry<String, String> firstNoun : this.pluralToNC.entrySet()) {
-                    for (Map.Entry<String, String> secondNoun : this.pluralToNC.entrySet()) {
+
+                    List<String> secondNounList = this.possiblePluralNouns.get(firstNoun.getKey());
+                for (String secondNoun : secondNounList){
+
+            String secNounClass = this.pluralToNC.get(secondNoun);
+                    if(secNounClass == null){
+                  
+                        continue;}
+
+
+
                         String verbConcord = concords.get(firstNoun.getValue());
                         List<String> verblist =  this.pluralVerbList.get(firstNoun.getKey());
 
                         
+
+
                         int plurallimit = 9999;
                         for (int number = 2; number < plurallimit; number++) {
                     for(String verb : verblist ){
@@ -283,7 +347,7 @@ void CardinalSingular2Singular() throws IOException {
                         command.add("-c");
                         command.add("Ca");
                         command.add("-nc");
-                        command.add(secondNoun.getValue());
+                        command.add(secNounClass);
                         command.add("-d");
     
                         // ProcessBuilder setup
@@ -303,17 +367,19 @@ void CardinalSingular2Singular() throws IOException {
     
                         String verbalisedNumber = outputLines.get(1).split(" = ")[1];
                         if(verbalisedNumber.equals("onye")) continue;
-                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun.getKey() + " " + verbalisedNumber;
+                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;
     
-                        csvWriter.append(String.join(",", sentence, firstNoun.getKey(), completedVerb, secondNoun.getKey(), String.valueOf(number)));
+                        csvWriter.append(String.join(",", sentence, firstNoun.getKey(), completedVerb, secondNoun, String.valueOf(number)));
                         csvWriter.append("\n");
+                        csvWriter.flush();
                     }
                 }
             }
         }
     
-        csvWriter.flush();
+        
         csvWriter.close();
+        System.out.println("DONE- CardinalPlural2Plural");
     }
     
     
@@ -384,9 +450,8 @@ return sentences;
     ArrayList<String> SOIStringsSingular() throws IOException, InterruptedException{
         ArrayList<String> sentences = new ArrayList<>();
 
-        int plurallimit =20;
+        int plurallimit =9999;
         for(int number =2; number< plurallimit; number++){
-
             for (Map.Entry<String,String> noun : this.singularToSNC.entrySet()){
                 String sentence = noun.getKey();
 
@@ -441,6 +506,7 @@ return sentences;
 
 
     void SOI() throws IOException, InterruptedException {
+        System.out.println("Started: SOI");
         FileWriter csvWriter = new FileWriter("SOI.csv");
         csvWriter.append("sentence,number\n");
     
@@ -483,15 +549,17 @@ return sentences;
     
                 csvWriter.append(String.join(",", sentence, String.valueOf(number)));
                 csvWriter.append("\n");
+                csvWriter.flush();
             }
         }
     
-        csvWriter.flush();
+        
         csvWriter.close();
     }
 
     
     void SOISingular() throws IOException, InterruptedException {
+        System.out.println("Started: SOISingular");
         FileWriter csvWriter = new FileWriter("SOISingular.csv");
         csvWriter.append("sentence,number\n");
     
@@ -534,15 +602,17 @@ return sentences;
     
                 csvWriter.append(String.join(",", sentence, String.valueOf(number)));
                 csvWriter.append("\n");
+                csvWriter.flush();
             }
         }
     
-        csvWriter.flush();
+        
         csvWriter.close();
     }
     
 
     void SOISentence() throws IOException, InterruptedException {
+        System.out.println("Started: SOISentence");
         List<String> SOIsentences = this.SOIStrings(); // Ensure SOIStrings() returns List<String>
         FileWriter csvWriter = new FileWriter("SOISentence.csv");
         csvWriter.append("sentence,verb\n");
@@ -552,21 +622,23 @@ return sentences;
                 List<String> verblist =  this.pluralVerbList.get(firstNoun.getKey());
                     for(String verb : verblist ){
                 String completedVerb = verbConcord + verb;
-                String sentence = firstNoun.getKey() + " " + completedVerb;
     
                 for (String sentenceEnd : SOIsentences) {
-                    String fsentence = sentence + " " + sentenceEnd;
+                    String fsentence = completedVerb + " " + sentenceEnd;
                     csvWriter.append(String.join(",", fsentence, completedVerb));
                     csvWriter.append("\n");
+                    csvWriter.flush();
                 }
             }
         }
     
-        csvWriter.flush();
+        
         csvWriter.close();
+        System.out.println("DONE- SOISentence");
     }
 
     void SingularSOISentence() throws IOException, InterruptedException {
+        System.out.println("Started: SingularSOISentence");
         List<String> SOIsentences = this.SOIStringsSingular(); // Ensure SOIStrings() returns List<String>
         FileWriter csvWriter = new FileWriter("SingularSOISentence.csv");
         csvWriter.append("sentence,verb\n");
@@ -576,27 +648,35 @@ return sentences;
                 List<String> verblist =  this.singularVerbList.get(firstNoun.getKey());
                     for(String verb : verblist ){
                 String completedVerb = verbConcord + verb;
-                String sentence = firstNoun.getKey() + " " + completedVerb;
     
                 for (String sentenceEnd : SOIsentences) {
-                    String fsentence = sentence + " " + sentenceEnd;
+                    String fsentence = completedVerb + " " + sentenceEnd;
                     csvWriter.append(String.join(",", fsentence, completedVerb));
                     csvWriter.append("\n");
+                    csvWriter.flush();
                 }
             }
         }
     
-        csvWriter.flush();
+        
         csvWriter.close();
+        System.out.println("DONE- SingularSOISentence");
     }
     
 
     void AdverbsSingularToSingular() throws IOException, InterruptedException {
+        System.out.println("Started: AdverbsSingularToSingular");
         FileWriter csvWriter = new FileWriter("AdverbsSingularToSingular.csv");
         csvWriter.append("sentence,number,verbalised_number,verb\n");
         
                 for (Map.Entry<String, String> firstNoun : this.singularToSNC.entrySet()) {
-                    for (Map.Entry<String, String> secondNoun : this.singularToSNC.entrySet()) {
+
+                    List<String> secondNounList = this.possibleSingularNouns.get(firstNoun.getKey());
+                    for (String secondNoun : secondNounList){
+                        String secNounClass = this.singularToSNC.get(secondNoun);
+                        if(secNounClass == null)continue;
+
+
                         List<String> verblist =  this.singularVerbList.get(firstNoun.getKey());
                         int plurallimit = 9999;
     
@@ -633,27 +713,41 @@ return sentences;
                         String verbalisedNumber = outputLines.get(1).split(" = ")[1];
                         if(verbalisedNumber.equals("onye")) continue;
     
-                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun.getKey() + " " + verbalisedNumber;
+                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;
                         csvWriter.append(String.join(",", sentence, String.valueOf(number), verbalisedNumber, completedVerb));
                         csvWriter.append("\n");
+                        csvWriter.flush();
                     }
                 }
             }
         }
     
-        csvWriter.flush();
+        
         csvWriter.close();
+        System.out.println("DONE- AdverbsSingularToSingular");
     }
     
 
 
 
     void AdverbsSingularToPlural() throws IOException, InterruptedException {
+        System.out.println("Started: AdverbsSingularToPlural");
         FileWriter csvWriter = new FileWriter("AdverbsSingularToPlural.csv");
         csvWriter.append("sentence,number,verbalised_number,verb\n");
         
                 for (Map.Entry<String, String> firstNoun : this.singularToSNC.entrySet()) {
-                    for (Map.Entry<String, String> secondNoun : this.pluralToNC.entrySet()) {
+
+
+
+                    String plural = this.singular2plural.get(firstNoun.getKey());
+                    List<String> secondNounList = this.possiblePluralNouns.get(plural);
+                    for (String secondNoun : secondNounList){
+    
+                String secNounClass = this.pluralToNC.get(secondNoun);
+                        if(secNounClass == null){
+                           
+                            continue;}
+
                         String verbConcord = concords.get(firstNoun.getValue());
                         List<String> verblist =  this.singularVerbList.get(firstNoun.getKey());
                         int plurallimit = 9999;
@@ -690,26 +784,36 @@ return sentences;
                         String verbalisedNumber = outputLines.get(1).split(" = ")[1];
                         if(verbalisedNumber.equals("onye")) continue;
     
-                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun.getKey() + " " + verbalisedNumber;
+                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;
                         csvWriter.append(String.join(",", sentence, String.valueOf(number), verbalisedNumber, completedVerb));
                         csvWriter.append("\n");
+                        csvWriter.flush();
                     }
                 }
             }
         }
     
-        csvWriter.flush();
+
         csvWriter.close();
+        System.out.println("DONE- AdverbsSingularToPlural");  
     }
     
 
 
     void AdverbsPluralToSingular() throws IOException, InterruptedException {
+        System.out.println("Started: AdverbsPluralToSingular");
         FileWriter csvWriter = new FileWriter("AdverbsPluralToSingular.csv");
         csvWriter.append("sentence,number,verbalised_number,verb\n");
         
                 for (Map.Entry<String, String> firstNoun : this.pluralToNC.entrySet()) {
-                    for (Map.Entry<String, String> secondNoun : this.singularToSNC.entrySet()) {
+
+                    String singular = this.plural2singular.get(firstNoun.getKey());
+                    List<String> secondNounList = this.possibleSingularNouns.get(singular);
+                    for (String secondNoun : secondNounList){
+                        String secNounClass = this.singularToSNC.get(secondNoun);
+                        if(secNounClass == null){
+                         
+                            continue;}
                         List<String> verblist =  this.pluralVerbList.get(firstNoun.getKey());
                         int plurallimit = 9999;
     
@@ -746,25 +850,41 @@ return sentences;
                         String verbalisedNumber = outputLines.get(1).split(" = ")[1];
                         if(verbalisedNumber.equals("onye")) continue;
     
-                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun.getKey() + " " + verbalisedNumber;
+                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;
                         csvWriter.append(String.join(",", sentence, String.valueOf(number), verbalisedNumber, completedVerb));
                         csvWriter.append("\n");
+                        csvWriter.flush();
+
                     }
                 }
             }
         }
     
-        csvWriter.flush();
+
         csvWriter.close();
+        System.out.println("DONE- AdverbsPluralToSingular");
     }
 
     void AdverbsPluralToPlural() throws IOException, InterruptedException {
+        System.out.println("Started: AdverbsPluralToPlural");
         FileWriter csvWriter = new FileWriter("AdverbsPluralToPlural.csv");
         csvWriter.append("sentence,number,verbalised_number,verb\n");
         
                 for (Map.Entry<String, String> firstNoun : this.pluralToNC.entrySet()) {
-                    for (Map.Entry<String, String> secondNoun : this.pluralToNC.entrySet()) {
-                        List<String> verblist =  this.pluralVerbList.get(firstNoun.getKey());
+
+
+                    List<String> secondNounList = this.possiblePluralNouns.get(firstNoun.getKey());
+                    for (String secondNoun : secondNounList){
+    
+                String secNounClass = this.pluralToNC.get(secondNoun);
+                        if(secNounClass == null){
+                            continue;}
+    
+                            List<String> verblist =  this.pluralVerbList.get(firstNoun.getKey());
+    
+                            
+    
+    
                         int plurallimit = 9999;
     
         for (int number = 1; number < plurallimit; number++) {
@@ -800,16 +920,19 @@ return sentences;
                         String verbalisedNumber = outputLines.get(1).split(" = ")[1];
                         if(verbalisedNumber.equals("onye")) continue;
     
-                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun.getKey() + " " + verbalisedNumber;
+                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;
                         csvWriter.append(String.join(",", sentence, String.valueOf(number), verbalisedNumber, completedVerb));
                         csvWriter.append("\n");
+                        
                     }
                 }
             }
         }
+        
     
-        csvWriter.flush();
+        
         csvWriter.close();
+        System.out.println("DONE- AdverbsPluralToPlural");
     }
     
 
@@ -823,24 +946,71 @@ return sentences;
   public static void main(String[] args) throws IOException, InterruptedException {
     IsiZuluSentenceGenerator sentenceGenerator =  new IsiZuluSentenceGenerator();
     sentenceGenerator.readCSV("src/VerbsCSV1.csv");
-sentenceGenerator.CardinalSingular2Singular();
-sentenceGenerator.CardinalPlural2Singular();
-sentenceGenerator.CardinalSingular2Plural();
-sentenceGenerator.CardinalPlural2Plural();
-sentenceGenerator.SOI(); 
-sentenceGenerator.SOISentence();
-sentenceGenerator.AdverbsSingularToSingular();
+
+    ExecutorService executor = Executors.newFixedThreadPool(12); // Adjust the pool size as necessary
+    executor.submit(() -> {
+        try { sentenceGenerator.CardinalSingular2Singular(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.CardinalPlural2Singular(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.CardinalSingular2Plural(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.CardinalPlural2Plural(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.SOI(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.SOISingular(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.SOISentence(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.SingularSOISentence(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.AdverbsSingularToSingular(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.AdverbsSingularToPlural(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.AdverbsPluralToSingular(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.AdverbsPluralToPlural(); } catch (Exception e) { e.printStackTrace(); }
+    });
+
+    // Shut down the executor and await termination of tasks
+    executor.shutdown();
+    try {
+        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }
+
+    System.out.println("All tasks completed.");
 
 
-sentenceGenerator.SingularSOISentence();
 
 
- sentenceGenerator.AdverbsSingularToPlural();
+//sentenceGenerator.CardinalSingular2Singular();
+//sentenceGenerator.CardinalPlural2Singular();
+//sentenceGenerator.CardinalSingular2Plural();
+//sentenceGenerator.CardinalPlural2Plural();
+//sentenceGenerator.SOI(); 
+//sentenceGenerator.SOISentence();
+//sentenceGenerator.SingularSOISentence();
+//sentenceGenerator.AdverbsSingularToSingular();
+//sentenceGenerator.AdverbsSingularToPlural();
+//sentenceGenerator.AdverbsPluralToSingular();
+//sentenceGenerator.AdverbsPluralToPlural();
 
-
-
-sentenceGenerator.AdverbsPluralToSingular();
-sentenceGenerator.AdverbsPluralToPlural();
+}
 
 
     
@@ -854,6 +1024,6 @@ sentenceGenerator.AdverbsPluralToPlural();
 
 
 
-  }
+
 
 }
