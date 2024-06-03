@@ -663,7 +663,7 @@ public class IsiZuluSentenceGenerator {
                 int plurallimit = 9999;
     
                 for (int number = 1; number < plurallimit; number++) {
-                            for(String verb : verblist ){
+                    for(String verb : verblist ){
                                 String completedVerb = verbConcord + verb;
                             
                                 List<String> command = new ArrayList<>();
@@ -725,47 +725,47 @@ public class IsiZuluSentenceGenerator {
                         List<String> verblist =  this.pluralVerbList.get(firstNoun.getKey());
                         int plurallimit = 9999;
     
-        for (int number = 1; number < plurallimit; number++) {
-                    for(String verb : verblist ){
-                        String verbConcord = concords.get(firstNoun.getValue());
-                        String completedVerb = verbConcord + verb;
-    
-                        List<String> command = new ArrayList<>();
-                        command.add("java");
-                        command.add("-jar");
-                        // Update the path according to the location confirmed by the command line
-                        command.add("src/ZuluNum2TextCMD.jar");
-                        command.add("-n");
-                        command.add(String.valueOf(number));
-                        command.add("-c");
-                        command.add("A");
-                        command.add("-d");
-    
-                        // ProcessBuilder setup
-                        ProcessBuilder processBuilder = new ProcessBuilder(command);
-                        processBuilder.redirectErrorStream(true);
-    
-                        Process process = processBuilder.start();
-    
-                        // Read the output from the process
-                        List<String> outputLines = new ArrayList<>();
-                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                outputLines.add(line);
+                        for (int number = 1; number < plurallimit; number++) {
+                                    for(String verb : verblist ){
+                                        String verbConcord = concords.get(firstNoun.getValue());
+                                        String completedVerb = verbConcord + verb;
+                                    
+                                        List<String> command = new ArrayList<>();
+                                        command.add("java");
+                                        command.add("-jar");
+                 
+                                        command.add("src/ZuluNum2TextCMD.jar");
+                                        command.add("-n");
+                                        command.add(String.valueOf(number));
+                                        command.add("-c");
+                                        command.add("A");
+                                        command.add("-d");
+                                    
+                                        // ProcessBuilder setup
+                                        ProcessBuilder processBuilder = new ProcessBuilder(command);
+                                        processBuilder.redirectErrorStream(true);
+                                    
+                                        Process process = processBuilder.start();
+                                    
+                                        // Read the output from the process
+                                        List<String> outputLines = new ArrayList<>();
+                                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                                            String line;
+                                            while ((line = reader.readLine()) != null) {
+                                                outputLines.add(line);
+                                            }
+                                        }
+                                        String verbalisedNumber = outputLines.get(1).split(" = ")[1];
+                                        if(verbalisedNumber.equals("onye")) continue;
+                                    
+                                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;
+                                        csvWriter.append(String.join(",", sentence, String.valueOf(number), verbalisedNumber, completedVerb));
+                                        csvWriter.append("\n");
+                                        csvWriter.flush();
+                                    
+                                    }
+                                }
                             }
-                        }
-                        String verbalisedNumber = outputLines.get(1).split(" = ")[1];
-                        if(verbalisedNumber.equals("onye")) continue;
-    
-                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;
-                        csvWriter.append(String.join(",", sentence, String.valueOf(number), verbalisedNumber, completedVerb));
-                        csvWriter.append("\n");
-                        csvWriter.flush();
-
-                    }
-                }
-            }
         }
     
 
@@ -777,67 +777,57 @@ public class IsiZuluSentenceGenerator {
         System.out.println("Started: AdverbsPluralToPlural");
         FileWriter csvWriter = new FileWriter("AdverbsPluralToPlural.csv");
         csvWriter.append("sentence,number,verbalised_number,verb\n");
-        
                 for (Map.Entry<String, String> firstNoun : this.pluralToNC.entrySet()) {
-
-
                     List<String> secondNounList = this.possiblePluralNouns.get(firstNoun.getKey());
                     for (String secondNoun : secondNounList){
-    
-                String secNounClass = this.pluralToNC.get(secondNoun);
+                        String secNounClass = this.pluralToNC.get(secondNoun);
                         if(secNounClass == null){
                             continue;}
     
-                            List<String> verblist =  this.pluralVerbList.get(firstNoun.getKey());
-    
-                            
-    
-    
+                        List<String> verblist =  this.pluralVerbList.get(firstNoun.getKey());
                         int plurallimit = 9999;
     
-        for (int number = 1; number < plurallimit; number++) {
-                    for(String verb : verblist ){
-                        String verbConcord = concords.get(firstNoun.getValue());
-                        String completedVerb = verbConcord + verb;
-    
-                        List<String> command = new ArrayList<>();
-                        command.add("java");
-                        command.add("-jar");
-                        // Update the path according to the location confirmed by the command line
-                        command.add("src/ZuluNum2TextCMD.jar");
-                        command.add("-n");
-                        command.add(String.valueOf(number));
-                        command.add("-c");
-                        command.add("A");
-                        command.add("-d");
-    
-                        // ProcessBuilder setup
-                        ProcessBuilder processBuilder = new ProcessBuilder(command);
-                        processBuilder.redirectErrorStream(true);
-    
-                        Process process = processBuilder.start();
-    
-                        // Read the output from the process
-                        List<String> outputLines = new ArrayList<>();
-                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                outputLines.add(line);
+                        for (int number = 1; number < plurallimit; number++) {
+                            for(String verb : verblist ){
+                                String verbConcord = concords.get(firstNoun.getValue());
+                                String completedVerb = verbConcord + verb;
+                            
+                                List<String> command = new ArrayList<>();
+                                command.add("java");
+                                command.add("-jar");
+                            
+                                command.add("src/ZuluNum2TextCMD.jar");
+                                command.add("-n");
+                                command.add(String.valueOf(number));
+                                command.add("-c");
+                                command.add("A");
+                                command.add("-d");
+                            
+                            
+                                ProcessBuilder processBuilder = new ProcessBuilder(command);
+                                processBuilder.redirectErrorStream(true);
+                            
+                                Process process = processBuilder.start();
+                            
+                            
+                                List<String> outputLines = new ArrayList<>();
+                                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                                    String line;
+                                    while ((line = reader.readLine()) != null) {
+                                        outputLines.add(line);
+                                    }
+                                }
+                                String verbalisedNumber = outputLines.get(1).split(" = ")[1];
+                                if(verbalisedNumber.equals("onye")) continue;
+                            
+                                String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;
+                                csvWriter.append(String.join(",", sentence, String.valueOf(number), verbalisedNumber, completedVerb));
+                                csvWriter.append("\n");
+
+                                    }
+                                }
                             }
                         }
-                        String verbalisedNumber = outputLines.get(1).split(" = ")[1];
-                        if(verbalisedNumber.equals("onye")) continue;
-    
-                        String sentence = firstNoun.getKey() + " " + completedVerb + " " + secondNoun + " " + verbalisedNumber;
-                        csvWriter.append(String.join(",", sentence, String.valueOf(number), verbalisedNumber, completedVerb));
-                        csvWriter.append("\n");
-                        
-                    }
-                }
-            }
-        }
-        
-    
         
         csvWriter.close();
         System.out.println("DONE- AdverbsPluralToPlural");
@@ -855,7 +845,7 @@ public class IsiZuluSentenceGenerator {
     IsiZuluSentenceGenerator sentenceGenerator =  new IsiZuluSentenceGenerator();
     sentenceGenerator.readCSV("src/VerbsCSV1.csv");
 
-    ExecutorService executor = Executors.newFixedThreadPool(12); // Adjust the pool size as necessary
+    ExecutorService executor = Executors.newFixedThreadPool(12); 
     executor.submit(() -> {
         try { sentenceGenerator.CardinalSingular2Singular(); } catch (Exception e) { e.printStackTrace(); }
     });
@@ -893,7 +883,7 @@ public class IsiZuluSentenceGenerator {
         try { sentenceGenerator.AdverbsPluralToPlural(); } catch (Exception e) { e.printStackTrace(); }
     });
 
-    // Shut down the executor and await termination of tasks
+
     executor.shutdown();
     try {
         executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
