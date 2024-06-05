@@ -342,7 +342,7 @@ public class IsiZuluSentenceGenerator {
  
     ArrayList<String> SOIStrings() throws IOException, InterruptedException{
         ArrayList<String> sentences = new ArrayList<>();
-        int plurallimit =9999;
+        int plurallimit =292;
         for(int number =2; number< plurallimit; number++){
             for (Map.Entry<String,String> noun : this.pluralToNC.entrySet()){
                 String sentence = noun.getKey();
@@ -391,48 +391,6 @@ public class IsiZuluSentenceGenerator {
 
 
 
-
-    ArrayList<String> SOIStringsSingular() throws IOException, InterruptedException{
-        ArrayList<String> sentences = new ArrayList<>();
-
-        int plurallimit =9999;
-        for(int number =2; number< plurallimit; number++){
-            for (Map.Entry<String,String> noun : this.singularToSNC.entrySet()){
-                String sentence = noun.getKey();
-
-
-                List<String> command = new ArrayList<>();
-                command.add("java");
-                command.add("-jar");
-                command.add("src/ZuluNum2TextCMD.jar");
-                command.add("-n");
-                command.add(String.valueOf(number));
-                command.add("-c");
-                command.add("SoI");
-                command.add("-nc");
-                command.add(noun.getValue());
-                command.add("-d");
-                ProcessBuilder processBuilder = new ProcessBuilder(command);
-                processBuilder.redirectErrorStream(true);
-        
-                Process process = processBuilder.start();
-
-                    List<String> outputLines = new ArrayList<>();
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            outputLines.add(line);
-                        }
-                    }
-                    String verbalisedNumber = outputLines.get(1).split(" = ")[1];
-                    if(verbalisedNumber.equals("onye")) continue;
-
-                    sentence= sentence+ " "+ verbalisedNumber;
-                    sentences.add(sentence);
-            }
-        }
-        return sentences;
-    }
 
 
     void SOI() throws IOException, InterruptedException {
@@ -483,54 +441,7 @@ public class IsiZuluSentenceGenerator {
     }
 
     
-    void SOISingular() throws IOException, InterruptedException {
-        System.out.println("Started: SOISingular");
-        FileWriter csvWriter = new FileWriter("SOISingular.csv");
-        csvWriter.append("sentence,number\n");
-    
-        int plurallimit = 9999;
-        for (int number = 2; number < plurallimit; number++) {
-            for (Map.Entry<String, String> noun : this.singularToSNC.entrySet()) {
-                String sentence = noun.getKey();
-    
-                List<String> command = new ArrayList<>();
-                command.add("java");
-                command.add("-jar");
-                command.add("src/ZuluNum2TextCMD.jar");
-                command.add("-n");
-                command.add(String.valueOf(number));
-                command.add("-c");
-                command.add("SoI");
-                command.add("-nc");
-                command.add(noun.getValue());
-                command.add("-d");
-    
-                // ProcessBuilder setup
-                ProcessBuilder processBuilder = new ProcessBuilder(command);
-                processBuilder.redirectErrorStream(true);
-    
-                Process process = processBuilder.start();
-                List<String> outputLines = new ArrayList<>();
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        outputLines.add(line);
-                    }
-                }
-    
-                String verbalisedNumber = outputLines.get(1).split(" = ")[1];
-                if(verbalisedNumber.equals("onye")) continue;
-                sentence = sentence + " " + verbalisedNumber;
-    
-                csvWriter.append(String.join(",", sentence, String.valueOf(number)));
-                csvWriter.append("\n");
-                csvWriter.flush();
-            }
-        }  
-        
-        csvWriter.close();
-    }
-    
+   
 
     void SOISentence() throws IOException, InterruptedException {
         System.out.println("Started: SOISentence");
@@ -540,12 +451,18 @@ public class IsiZuluSentenceGenerator {
     
             for (Map.Entry<String, String> firstNoun : this.pluralToNC.entrySet()) {
                 String verbConcord = this.concords.get(firstNoun.getValue());
+
                 List<String> verblist =  this.pluralVerbList.get(firstNoun.getKey());
                     for(String verb : verblist ){
                 String completedVerb = verbConcord + verb;
     
                 for (String sentenceEnd : SOIsentences) {
-                    String fsentence = completedVerb + " " + sentenceEnd;
+
+                    String pluralNoun = sentenceEnd.split(" ")[0];
+                    List<String> secondNounList = this.possiblePluralNouns.get(firstNoun.getKey());
+                    if(!secondNounList.contains(pluralNoun)) continue;
+                   
+                    String fsentence = firstNoun.getKey()+ " " +completedVerb + " " + sentenceEnd;
                     csvWriter.append(String.join(",", fsentence, completedVerb));
                     csvWriter.append("\n");
                     csvWriter.flush();
@@ -557,32 +474,6 @@ public class IsiZuluSentenceGenerator {
         System.out.println("DONE- SOISentence");
     }
 
-    void SingularSOISentence() throws IOException, InterruptedException {
-        System.out.println("Started: SingularSOISentenceS");
-        List<String> SOIsentences = this.SOIStringsSingular(); 
-        FileWriter csvWriter = new FileWriter("SingularSOISentence.csv");
-        csvWriter.append("sentence,verb\n");
-    
-            for (Map.Entry<String, String> firstNoun : this.singularToSNC.entrySet()) {
-                String verbConcord = this.concords.get(firstNoun.getValue());
-                List<String> verblist =  this.singularVerbList.get(firstNoun.getKey());
-                    for(String verb : verblist ){
-                String completedVerb = verbConcord + verb;
-    
-                for (String sentenceEnd : SOIsentences) {
-                    String fsentence = completedVerb + " " + sentenceEnd;
-                    csvWriter.append(String.join(",", fsentence, completedVerb));
-                    csvWriter.append("\n");
-                    csvWriter.flush();
-                }
-            }
-        }
-    
-        
-        csvWriter.close();
-        System.out.println("DONE- SingularSOISentence");
-    }
-    
 
     void AdverbsSingularToSingular() throws IOException, InterruptedException {
         System.out.println("Started: AdverbsSingularToSingular");
@@ -762,7 +653,7 @@ public class IsiZuluSentenceGenerator {
                                         csvWriter.append(String.join(",", sentence, String.valueOf(number), verbalisedNumber, completedVerb));
                                         csvWriter.append("\n");
                                         csvWriter.flush();
-                                    
+
                                     }
                                 }
                             }
@@ -832,6 +723,128 @@ public class IsiZuluSentenceGenerator {
         csvWriter.close();
         System.out.println("DONE- AdverbsPluralToPlural");
     }
+
+
+
+
+    void OrdinalSingular2Singular() throws IOException, InterruptedException {
+        System.out.println("Started: OrdinalSingular2Singular");
+        FileWriter csvWriter = new FileWriter("OrdinalSingular2Singular.csv");
+        csvWriter.append("sentence,first_noun,verb,second_noun,number\n");
+        for (Map.Entry<String, String> firstNoun : this.singularToSNC.entrySet()) {
+            if(firstNoun.getKey().equals("imali")) continue;
+            List<String> secondNounList = this.possibleSingularNouns.get(firstNoun.getKey());
+            for (String secondNoun : secondNounList){
+                String secNounClass = this.singularToSNC.get(secondNoun);
+                if(secNounClass == null){continue;}
+                String verbConcord = concords.get(firstNoun.getValue());
+                List<String> verblist =  this.singularVerbList.get(firstNoun.getKey());               
+                int plurallimit = 9999;
+                for (int number = 1; number < plurallimit; number++) {
+                    for(String verb : verblist ){
+                        String completedVerb = verbConcord + verb;
+                        List<String> command = new ArrayList<>();
+                        command.add("java");
+                        command.add("-jar");
+                        command.add("src/ZuluNum2TextCMD.jar");
+                        command.add("-n");
+                        command.add(String.valueOf(number));
+                        command.add("-c");
+                        command.add("O");
+                        command.add("-nc");
+                        command.add(firstNoun.getValue());
+                        command.add("-d");
+    
+                        // ProcessBuilder setup
+                        ProcessBuilder processBuilder = new ProcessBuilder(command);
+                        processBuilder.redirectErrorStream(true);
+    
+                        Process process = processBuilder.start();
+    
+                        // Read the output from the process
+                        List<String> outputLines = new ArrayList<>();
+                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                outputLines.add(line);
+                            }
+                        }
+    
+                        String verbalisedNumber = outputLines.get(1).split(" = ")[1];
+                        if(verbalisedNumber.equals("onye")) continue;
+                        String sentence = firstNoun.getKey() + " " +verbalisedNumber+" "+completedVerb + " " + secondNoun;
+    
+                        csvWriter.append(String.join(",", sentence, firstNoun.getKey(), completedVerb, secondNoun, String.valueOf(number)));
+                        csvWriter.append("\n");
+                        csvWriter.flush();
+                    }
+                }
+            }
+        } 
+        csvWriter.close();
+        System.out.println("DONE- OrdinalSingular2Singular");
+    }
+
+    void OrdinalSingular2Plural() throws IOException, InterruptedException {
+        System.out.println("Started: OrdinalSingular2Plural");
+        FileWriter csvWriter = new FileWriter("OrdinalSingular2Plural.csv");
+        csvWriter.append("sentence,first_noun,verb,second_noun,number\n");
+        for (Map.Entry<String, String> firstNoun : this.singularToSNC.entrySet()) {
+            if(firstNoun.getKey().equals("imali")) continue;
+            String plural = this.singular2plural.get(firstNoun.getKey());
+            List<String> secondNounList = this.possiblePluralNouns.get(plural);
+            for (String secondNoun : secondNounList){
+                String secNounClass = this.pluralToNC.get(secondNoun);
+                if(secNounClass == null){continue;}
+                String verbConcord = concords.get(firstNoun.getValue());
+                List<String> verblist =  this.singularVerbList.get(firstNoun.getKey());               
+                int plurallimit = 9999;
+                for (int number = 1; number < plurallimit; number++) {
+                    for(String verb : verblist ){
+                        String completedVerb = verbConcord + verb;
+                        List<String> command = new ArrayList<>();
+                        command.add("java");
+                        command.add("-jar");
+                        command.add("src/ZuluNum2TextCMD.jar");
+                        command.add("-n");
+                        command.add(String.valueOf(number));
+                        command.add("-c");
+                        command.add("O");
+                        command.add("-nc");
+                        command.add(firstNoun.getValue());
+                        command.add("-d");
+    
+                        // ProcessBuilder setup
+                        ProcessBuilder processBuilder = new ProcessBuilder(command);
+                        processBuilder.redirectErrorStream(true);
+    
+                        Process process = processBuilder.start();
+    
+                        // Read the output from the process
+                        List<String> outputLines = new ArrayList<>();
+                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                outputLines.add(line);
+                            }
+                        }
+                        String verbalisedNumber = outputLines.get(1).split(" = ")[1];
+                        if(verbalisedNumber.equals("onye")) continue;
+                        String sentence = firstNoun.getKey() + " " +verbalisedNumber+" "+completedVerb + " " + secondNoun;
+    
+                        csvWriter.append(String.join(",", sentence, firstNoun.getKey(), completedVerb, secondNoun, String.valueOf(number)));
+                        csvWriter.append("\n");
+                        csvWriter.flush();
+                    }
+                }
+            }
+        } 
+        csvWriter.close();
+        System.out.println("DONE- OrdinalSingular2Plural");
+    }
+    
+    
+    
     
 
 
@@ -862,13 +875,7 @@ public class IsiZuluSentenceGenerator {
         try { sentenceGenerator.SOI(); } catch (Exception e) { e.printStackTrace(); }
     });
     executor.submit(() -> {
-        try { sentenceGenerator.SOISingular(); } catch (Exception e) { e.printStackTrace(); }
-    });
-    executor.submit(() -> {
         try { sentenceGenerator.SOISentence(); } catch (Exception e) { e.printStackTrace(); }
-    });
-    executor.submit(() -> {
-        try { sentenceGenerator.SingularSOISentence(); } catch (Exception e) { e.printStackTrace(); }
     });
     executor.submit(() -> {
         try { sentenceGenerator.AdverbsSingularToSingular(); } catch (Exception e) { e.printStackTrace(); }
@@ -882,8 +889,14 @@ public class IsiZuluSentenceGenerator {
     executor.submit(() -> {
         try { sentenceGenerator.AdverbsPluralToPlural(); } catch (Exception e) { e.printStackTrace(); }
     });
+    executor.submit(() -> {
+        try { sentenceGenerator.OrdinalSingular2Singular(); } catch (Exception e) { e.printStackTrace(); }
+    });
+    executor.submit(() -> {
+        try { sentenceGenerator.OrdinalSingular2Plural(); } catch (Exception e) { e.printStackTrace(); }
+    });
 
-
+    
     executor.shutdown();
     try {
         executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
